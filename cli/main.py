@@ -17,6 +17,7 @@ from orchestrator.health_manager import HealthManager
 from orchestrator.network_manager import NetworkManager
 from orchestrator.recovery_manager import RecoveryManager
 from orchestrator.resource_manager import ResourceManager
+from synthetic_data.generator import export_dataset
 from validation.isolation import IsolationValidator
 
 app = typer.Typer(
@@ -150,6 +151,10 @@ def start(
     if not docker.daemon_ready():
         console.print("[red]Docker daemon is not running or inaccessible.[/red]")
         raise typer.Exit(code=1)
+
+    dataset_file = root / "synthetic_data" / "dataset.json"
+    if not dataset_file.exists():
+        export_dataset(root / "synthetic_data")
 
     res = docker.up(profiles=assessment.profile.compose_profiles, build=build)
     if not res.ok:

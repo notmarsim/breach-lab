@@ -48,7 +48,12 @@ networks:
       config:
         - subnet: ${BREACHLAB_NET_MANAGEMENT:-10.10.60.0/24}
 
+volumes:
+  db_postgres_data:
+  cc_state_data:
+
 services:
+  # --- Core & Management Plane ---
   lab-proxy:
     image: nginx:1.27-alpine
     container_name: breachlab-proxy
@@ -57,9 +62,12 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:8080:80"
+    volumes:
+      - ./infrastructure/networking/nginx-dmz.conf:/etc/nginx/nginx.conf:ro
     networks:
       - external
       - dmz
+      - internal
     deploy:
       resources:
         limits:
@@ -71,7 +79,7 @@ services:
         max-size: "10m"
         max-file: "3"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health >/dev/null 2>&1 || nc -z 127.0.0.1 80"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -88,8 +96,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 128M
-          cpus: "0.25"
+          memory: 96M
+          cpus: "0.20"
     logging:
       driver: json-file
       options:
@@ -100,3 +108,370 @@ services:
       interval: 15s
       timeout: 5s
       retries: 3
+
+  control-center:
+    build:
+      context: .
+      dockerfile: control_center/backend/Dockerfile
+    container_name: breachlab-control-center
+    hostname: control.mgmt.nexora.test
+    profiles: ["core"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8443:8443"
+    volumes:
+      - cc_state_data:/app/.breachlab
+    networks:
+      - management
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.50"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # --- Database Tier (internal: true) ---
+  db01-postgres:
+    image: postgres:16-alpine
+    container_name: breachlab-db01
+    hostname: db01.nexora.test
+    profiles: ["web", "api", "infrastructure", "full"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nexora
+      POSTGRES_PASSWORD: nexora_synth_db_pass
+      POSTGRES_DB: nexora_corp
+    volumes:
+      - db_postgres_data:/var/lib/postgresql/data
+    networks:
+      - database
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.50"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexora -d nexora_corp"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  cache01-redis:
+    image: redis:7-alpine
+    container_name: breachlab-cache01
+    hostname: cache01.nexora.test
+    profiles: ["web", "api", "infrastructure", "full"]
+    restart: unless-stopped
+    networks:
+      - database
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # --- DMZ Web Applications ---
+  corporate-website:
+    build: ./applications/corporate-website
+    container_name: breachlab-web01
+    hostname: www.nexora.test
+    profiles: ["web"]
+    restart: unless-stopped
+    volumes:
+      - ./synthetic_data/dataset.json:/data/dataset.json:ro
+    networks:
+      - dmz
+      - database
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.35"
+
+  ecommerce:
+    build: ./applications/ecommerce
+    container_name: breachlab-web02
+    hostname: shop.nexora.test
+    profiles: ["web"]
+    restart: unless-stopped
+    volumes:
+      - ./synthetic_data/dataset.json:/data/dataset.json:ro
+    networks:
+      - dmz
+      - database
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.35"
+
+  customer-portal:
+    build: ./applications/customer-portal
+    container_name: breachlab-portal01
+    hostname: portal.nexora.test
+    profiles: ["web"]
+    restart: unless-stopped
+    volumes:
+      - ./synthetic_data/dataset.json:/data/dataset.json:ro
+    networks:
+      - dmz
+      - database
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.35"
+
+  # --- Internal Web Applications ---
+  helpdesk:
+    build: ./applications/helpdesk
+    container_name: breachlab-help01
+    hostname: support.nexora.test
+    profiles: ["web"]
+    restart: unless-stopped
+    volumes:
+      - ./synthetic_data/dataset.json:/data/dataset.json:ro
+    networks:
+      - internal
+      - database
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.30"
+
+  intranet:
+    build: ./applications/intranet
+    container_name: breachlab-intra01
+    hostname: intranet.nexora.test
+    profiles: ["web"]
+    restart: unless-stopped
+    volumes:
+      - ./synthetic_data/dataset.json:/data/dataset.json:ro
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.30"
+
+  finance:
+    build: ./applications/finance
+    container_name: breachlab-fin01
+    hostname: finance.nexora.test
+    profiles: ["full"]
+    restart: unless-stopped
+    volumes:
+      - ./synthetic_data/dataset.json:/data/dataset.json:ro
+    networks:
+      - internal
+      - database
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.30"
+
+  webmail:
+    build: ./applications/webmail
+    container_name: breachlab-mail01
+    hostname: mail.nexora.test
+    profiles: ["web"]
+    restart: unless-stopped
+    volumes:
+      - ./synthetic_data/dataset.json:/data/dataset.json:ro
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.30"
+
+  file-manager:
+    build: ./applications/file-manager
+    container_name: breachlab-file01
+    hostname: files.nexora.test
+    profiles: ["full"]
+    restart: unless-stopped
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+
+  legacy-portal:
+    build: ./applications/legacy-portal
+    container_name: breachlab-legacy01
+    hostname: legacy.nexora.test
+    profiles: ["full"]
+    restart: unless-stopped
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.30"
+
+  admin-panel:
+    build: ./applications/admin-panel
+    container_name: breachlab-admin01
+    hostname: admin.nexora.test
+    profiles: ["full"]
+    restart: unless-stopped
+    networks:
+      - restricted
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.30"
+
+  # --- APIs ---
+  api-rest:
+    build: ./apis/rest
+    container_name: breachlab-api01
+    hostname: api.nexora.test
+    profiles: ["api"]
+    restart: unless-stopped
+    volumes:
+      - ./synthetic_data/dataset.json:/data/dataset.json:ro
+    networks:
+      - dmz
+      - database
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.35"
+
+  api-graphql:
+    build: ./apis/graphql
+    container_name: breachlab-api02
+    hostname: api02.nexora.test
+    profiles: ["api"]
+    restart: unless-stopped
+    volumes:
+      - ./synthetic_data/dataset.json:/data/dataset.json:ro
+    networks:
+      - dmz
+      - database
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.30"
+
+  api-soap:
+    build: ./apis/soap
+    container_name: breachlab-soap01
+    hostname: soap.nexora.test
+    profiles: ["api"]
+    restart: unless-stopped
+    networks:
+      - dmz
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+
+  api-websocket:
+    build: ./apis/websocket
+    container_name: breachlab-ws01
+    hostname: ws.nexora.test
+    profiles: ["api"]
+    restart: unless-stopped
+    networks:
+      - dmz
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+
+  # --- Infrastructure Services ---
+  dns01:
+    build: ./infrastructure/dns
+    container_name: breachlab-dns01
+    hostname: ns1.nexora.test
+    profiles: ["infrastructure"]
+    restart: unless-stopped
+    networks:
+      - dmz
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+
+  ssh01:
+    build: ./infrastructure/ssh
+    container_name: breachlab-ssh01
+    hostname: ssh01.nexora.test
+    profiles: ["infrastructure"]
+    restart: unless-stopped
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+
+  # --- Linux User-Space PrivEsc Targets ---
+  linux01:
+    build: ./privesc/targets/linux01
+    container_name: breachlab-linux01
+    hostname: linux01.nexora.test
+    profiles: ["privesc"]
+    restart: unless-stopped
+    networks:
+      - restricted
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.25"
+
+  linux02:
+    build: ./privesc/targets/linux02
+    container_name: breachlab-linux02
+    hostname: linux02.nexora.test
+    profiles: ["privesc"]
+    restart: unless-stopped
+    networks:
+      - restricted
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.25"
+
+  linux03:
+    build: ./privesc/targets/linux03
+    container_name: breachlab-linux03
+    hostname: linux03.nexora.test
+    profiles: ["privesc"]
+    restart: unless-stopped
+    networks:
+      - restricted
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: "0.25"

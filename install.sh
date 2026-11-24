@@ -108,7 +108,10 @@ exec "${VENV_DIR}/bin/breachlab" "\$@"
 EOF
 chmod 0755 "${CLI_SYMLINK}"
 
-# 9. Pull/build base images
+# 9. Generate synthetic Nexora dataset & pull/build base images
+log_info "Generating synthetic Nexora Technologies dataset..."
+"${VENV_DIR}/bin/python" -c "from pathlib import Path; from synthetic_data.generator import export_dataset; export_dataset(Path('${SCRIPT_DIR}/synthetic_data'))"
+
 log_info "Building BreachLab base Ubuntu image..."
 docker build -t breachlab/ubuntu-base:24.04 "${SCRIPT_DIR}/images/ubuntu-base"
 docker compose -f "${SCRIPT_DIR}/compose.yaml" --profile core pull

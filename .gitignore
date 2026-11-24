@@ -36,3 +36,6 @@ control_center/frontend/dist/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Generated synthetic dataset
+synthetic_data/dataset.json
