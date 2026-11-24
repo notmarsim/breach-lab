@@ -49,20 +49,29 @@ log_info "Resources verified: ${TOTAL_RAM_MB} MB RAM, ${FREE_DISK_GB} GB free di
 
 # 4. Install system dependencies
 log_info "Installing base system dependencies..."
+if [[ -f /etc/apt/sources.list.d/docker.list ]] && grep -q "kali-rolling" /etc/apt/sources.list.d/docker.list 2>/dev/null; then
+  rm -f /etc/apt/sources.list.d/docker.list
+fi
 apt-get update -qq
 apt-get install -y -qq ca-certificates curl gnupg lsb-release python3 python3-venv python3-pip nftables iproute2
 
 # 5. Install Docker & Docker Compose plugin (idempotent)
 if ! command -v docker >/dev/null 2>&1; then
   log_info "Installing Docker Engine and Compose plugin..."
-  install -m 0755 -d /etc/apt/keyrings
-  if [[ ! -f /etc/apt/keyrings/docker.asc ]]; then
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-    chmod a+r /etc/apt/keyrings/docker.asc
+  DOCKER_DISTRO="ubuntu"
+  DOCKER_CODENAME="${VERSION_CODENAME:-noble}"
+  if [[ "${ID:-}" == "kali" ]]; then
+    DOCKER_DISTRO="debian"
+    DOCKER_CODENAME="bookworm"
+  elif [[ "${ID:-}" == "debian" ]]; then
+    DOCKER_DISTRO="debian"
   fi
+  install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL "https://download.docker.com/linux/${DOCKER_DISTRO}/gpg" -o /etc/apt/keyrings/docker.asc
+  chmod a+r /etc/apt/keyrings/docker.asc
   echo \
-    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-    $(. /etc/os-release && echo "${VERSION_CODENAME}") stable" \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/${DOCKER_DISTRO} \
+    ${DOCKER_CODENAME} stable" \
     > /etc/apt/sources.list.d/docker.list
   apt-get update -qq
   apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
