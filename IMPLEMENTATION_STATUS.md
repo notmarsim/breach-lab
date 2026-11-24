@@ -2,38 +2,29 @@
 
 This document tracks the exact state of every BreachLab component.
 Status definitions:
-- **Implemented**: Code/configuration written and complete for the current phase.
-- **Partially Implemented**: Core structure or subset exists; remaining features pending.
+- **Implemented**: Code/configuration written for the current scope.
+- **Partially Implemented**: Core structure or initial subset exists; full quantitative targets pending.
 - **Tested**: Verified via automated `pytest` execution in this environment.
-- **Untested**: Written but not yet verified by runtime execution (e.g., Linux-only `install.sh` / `nftables` on Windows host).
-- **Planned**: Scheduled for a future phase; not yet implemented.
-- **Blocked**: Cannot proceed due to an external or environment constraint.
+- **Untested**: Written but not yet verified by runtime execution (e.g., Linux-only `install.sh` / `nftables` / Docker container boot).
+- **Planned**: Scheduled for future expansion.
+- **Blocked**: Cannot execute in current environment (e.g., Docker daemon not running on Windows host).
 
 ---
 
-## Phase 1 — Foundation
+## Phase-by-Phase Status
 
-| Component | Implementation Status | Verification Status | Notes |
-|---|---|---|---|
-| Repository structure & docs (`ARCHITECTURE.md`, `ROADMAP.md`, `SECURITY.md`, `CONTRIBUTING.md`) | Implemented | Tested (reviewed) | Core documentation created |
-| Declarative configs (`config/breachlab.yaml`, `config/networks.yaml`, `.env.example`) | Implemented | Tested | Validated via schema & unit tests |
-| Resource profiles (`profiles/*.yaml` for all 8 profiles) | Implemented | Tested | `minimal`, `web`, `api`, `web-api`, `infrastructure`, `privesc`, `balanced`, `full` |
-| Orchestrator (`docker_manager.py`, `network_manager.py`, `resource_manager.py`, `scenario_manager.py`, `recovery_manager.py`, `health_manager.py`) | Implemented | Tested | Unit tests covering config, networks, resources, seeds, recovery |
-| Isolation & Validation (`validation/isolation.py`) | Implemented | Tested | Fail-closed static & runtime policy checks |
-| Firewall template (`infrastructure/firewall/nftables.conf.template`) | Implemented | Untested | Linux `nftables` template; requires Ubuntu 24.04 host for live kernel enforcement |
-| CLI (`cli/main.py`, `cli/commands/*`) | Implemented | Tested | Typer CLI tested via `CliRunner` |
-| Base `compose.yaml` & `images/ubuntu-base/Dockerfile` | Implemented | Untested | Validated structurally by `isolation.py`; live container boot requires Linux/Docker daemon |
-| Installer (`install.sh`, `uninstall.sh`) | Implemented | Untested | Bash scripts for Ubuntu Server 24.04 LTS |
-
-## Future Phases (2–9)
-
-| Phase | Scope | Status |
-|---|---|---|
-| Phase 2 — Corporate Foundation | Nexora identity, synthetic data, DBs, Corporate Site, E-commerce, Customer Portal | Planned |
-| Phase 3 — Web Applications | Remaining 7 web apps + 110 web educational modules + hardened variants | Planned |
-| Phase 4 — API Security | REST, GraphQL, SOAP, WebSocket + 50 API modules | Planned |
-| Phase 5 — Infrastructure | 20 logical servers, network services + 50 infra modules | Planned |
-| Phase 6 — Linux PrivEsc | Dedicated user-space Ubuntu targets + 40 PrivEsc modules | Planned |
-| Phase 7 — Scenario Engine | Full dynamic IP/user/module variation & mode enforcement | Planned |
-| Phase 8 — Control Center | FastAPI backend + React/TS frontend + SQLite | Planned |
-| Phase 9 — Quality Assurance | End-to-end integration, security audit, full target validation | Planned |
+| Phase | Component | Implementation Status | Verification Status | Notes |
+|---|---|---|---|---|
+| 1 — Foundation | Docs, CLI, Orchestrator, Profiles, Isolation (`validation/isolation.py`) | Implemented | Tested | Unit/isolation/scenario/recovery tests passing |
+| 1 — Foundation | `install.sh`, `uninstall.sh`, `nftables.conf.template`, `compose.yaml` | Implemented | Untested (runtime) | `compose.yaml` statically verified; live Linux/Docker boot untested here |
+| 2 — Corporate Foundation | `synthetic_data/generator.py` (Nexora Technologies, 9 depts, relational data) | Implemented | Tested | Verified deterministic generation & relational IDs |
+| 2 — Corporate Foundation | `corporate-website`, `ecommerce`, `customer-portal` | Implemented | Partially Tested | `corporate-website` tested via FastAPI `TestClient`; Node/container boot untested |
+| 3 — Web Applications | Remaining 7 apps (`helpdesk`, `intranet`, `finance`, `webmail`, `file-manager`, `admin-panel`, `legacy-portal`) | Implemented (baseline) | Partially Tested | `webmail` external block tested; PHP/Go/Node containers untested live |
+| 3 — Web Applications | `vulnerability_catalog/` & `hardened_profiles/` | Partially Implemented | Tested (schema/loader) | Standardized schema & starter modules; full 110 web goal in progress |
+| 4 — API Security | `apis/rest`, `apis/graphql`, `apis/soap`, `apis/websocket` | Implemented (baseline) | Partially Tested | `apis/rest` v1/v3 tested via `TestClient`; full 50 API goal in progress |
+| 5 — Infrastructure | `infrastructure/` (`dns`, `ssh`, `ftp`, `smb`, `networking/nginx-dmz.conf`) | Implemented (configs/Dockerfiles) | Untested | Requires Linux/Docker build & runtime verification |
+| 6 — Linux PrivEsc | `privesc/targets/linux01..03` (unprivileged user-space Dockerfiles) | Implemented (baseline) | Untested | Requires Docker build & runtime verification |
+| 7 — Scenario Engine | `scenario_engine/engine.py` (seed compilation + Black Box spoiler hiding) | Implemented | Tested | Verified via `pytest` |
+| 8 — Control Center | `control_center/backend/app.py` (FastAPI + SQLite) | Implemented | Tested | Dashboard, hints, exam-mode lock, notes tested via `TestClient` |
+| 8 — Control Center | `control_center/frontend/` (React + TypeScript) | Implemented (baseline) | Untested | Requires `npm install && npm run build` verification |
+| 9 — QA | Full `pytest` suite (unit + isolation + scenario + recovery + integration) | Implemented | Tested | All current tests passing; live multi-container integration pending Linux VM |

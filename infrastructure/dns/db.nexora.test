@@ -1,0 +1,26 @@
+$TTL    604800
+@       IN      SOA     ns1.nexora.test. admin.nexora.test. (
+                              2026112401 ; Serial
+                              604800     ; Refresh
+                              86400      ; Retry
+                              2419200    ; Expire
+                              604800 )   ; Negative Cache TTL
+;
+@       IN      NS      ns1.nexora.test.
+ns1     IN      A       10.10.20.53
+www     IN      A       10.10.20.10
+shop    IN      A       10.10.20.10
+portal  IN      A       10.10.20.10
+api     IN      A       10.10.20.10
+api02   IN      A       10.10.20.12
+intranet IN     A       10.10.30.10
+support IN      A       10.10.30.11
+finance IN      A       10.10.30.12
+mail    IN      A       10.10.30.13
+files   IN      A       10.10.30.14
+legacy  IN      A       10.10.30.15
+admin   IN      A       10.10.50.10
+backup01 IN     A       10.10.50.20
+linux01 IN      A       10.10.50.31
+linux02 IN      A       10.10.50.32
+linux03 IN      A       10.10.50.33

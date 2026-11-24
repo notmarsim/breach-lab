@@ -28,7 +28,7 @@ breachlab = "cli.main:app"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["cli*", "orchestrator*", "validation*", "scenario_engine*"]
+include = ["cli*", "orchestrator*", "validation*", "scenario_engine*", "synthetic_data*", "vulnerability_catalog*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

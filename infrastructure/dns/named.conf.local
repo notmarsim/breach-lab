@@ -1,0 +1,5 @@
+zone "nexora.test" {
+    type master;
+    file "/etc/bind/zones/db.nexora.test";
+    allow-transfer { 10.10.20.0/24; 10.10.30.0/24; };
+};
