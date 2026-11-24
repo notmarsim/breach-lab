@@ -1,0 +1,14 @@
+name: minimal
+description: "Lightweight foundation profile for low-memory hosts (~2 GB RAM)."
+estimated_ram_mb: 2048
+min_host_ram_mb: 3072
+recommended_cpus: 2
+compose_profiles:
+  - core
+  - minimal
+services:
+  - lab-proxy
+  - lab-health
+limits:
+  default_memory: "256m"
+  default_cpus: "0.5"

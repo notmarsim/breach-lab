@@ -1,0 +1,102 @@
+name: breachlab
+
+networks:
+  external:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-bl-ext
+    ipam:
+      config:
+        - subnet: ${BREACHLAB_NET_EXTERNAL:-10.10.10.0/24}
+  dmz:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.name: br-bl-dmz
+    ipam:
+      config:
+        - subnet: ${BREACHLAB_NET_DMZ:-10.10.20.0/24}
+  internal:
+    driver: bridge
+    internal: true
+    driver_opts:
+      com.docker.network.bridge.name: br-bl-int
+    ipam:
+      config:
+        - subnet: ${BREACHLAB_NET_INTERNAL:-10.10.30.0/24}
+  database:
+    driver: bridge
+    internal: true
+    driver_opts:
+      com.docker.network.bridge.name: br-bl-db
+    ipam:
+      config:
+        - subnet: ${BREACHLAB_NET_DATABASE:-10.10.40.0/24}
+  restricted:
+    driver: bridge
+    internal: true
+    driver_opts:
+      com.docker.network.bridge.name: br-bl-res
+    ipam:
+      config:
+        - subnet: ${BREACHLAB_NET_RESTRICTED:-10.10.50.0/24}
+  management:
+    driver: bridge
+    internal: true
+    driver_opts:
+      com.docker.network.bridge.name: br-bl-mgmt
+    ipam:
+      config:
+        - subnet: ${BREACHLAB_NET_MANAGEMENT:-10.10.60.0/24}
+
+services:
+  lab-proxy:
+    image: nginx:1.27-alpine
+    container_name: breachlab-proxy
+    hostname: proxy.nexora.test
+    profiles: ["core"]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"
+    networks:
+      - external
+      - dmz
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  lab-health:
+    image: python:3.12-alpine
+    container_name: breachlab-health
+    hostname: health.mgmt.nexora.test
+    profiles: ["core"]
+    restart: unless-stopped
+    command: ["python3", "-m", "http.server", "8081", "--bind", "0.0.0.0"]
+    networks:
+      - management
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 3

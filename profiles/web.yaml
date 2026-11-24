@@ -1,0 +1,14 @@
+name: web
+description: "Web application pentesting profile (2-3 GB RAM)."
+estimated_ram_mb: 2560
+min_host_ram_mb: 4096
+recommended_cpus: 2
+compose_profiles:
+  - core
+  - web
+services:
+  - lab-proxy
+  - lab-health
+limits:
+  default_memory: "384m"
+  default_cpus: "0.5"

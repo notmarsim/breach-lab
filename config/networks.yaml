@@ -1,0 +1,37 @@
+networks:
+  external:
+    subnet: "10.10.10.0/24"
+    gateway: "10.10.10.1"
+    bridge: "br-bl-ext"
+    internal: false
+    purpose: "Pentester machine (e.g. Kali Linux) on isolated lab interface"
+  dmz:
+    subnet: "10.10.20.0/24"
+    gateway: "10.10.20.1"
+    bridge: "br-bl-dmz"
+    internal: false
+    purpose: "Public-facing corporate web applications and API gateways"
+  internal:
+    subnet: "10.10.30.0/24"
+    gateway: "10.10.30.1"
+    bridge: "br-bl-int"
+    internal: true
+    purpose: "Internal corporate services (Intranet, Helpdesk, Webmail, File Manager)"
+  database:
+    subnet: "10.10.40.0/24"
+    gateway: "10.10.40.1"
+    bridge: "br-bl-db"
+    internal: true
+    purpose: "Database tier (PostgreSQL, MySQL, MongoDB, Redis)"
+  restricted:
+    subnet: "10.10.50.0/24"
+    gateway: "10.10.50.1"
+    bridge: "br-bl-res"
+    internal: true
+    purpose: "Restricted internal services, backups, and Linux PrivEsc targets"
+  management:
+    subnet: "10.10.60.0/24"
+    gateway: "10.10.60.1"
+    bridge: "br-bl-mgmt"
+    internal: true
+    purpose: "Lab management plane and Control Center (out of pentest scope)"

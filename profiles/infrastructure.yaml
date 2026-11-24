@@ -1,0 +1,14 @@
+name: infrastructure
+description: "Network & Infrastructure pentesting profile (2-4 GB RAM)."
+estimated_ram_mb: 3072
+min_host_ram_mb: 6144
+recommended_cpus: 2
+compose_profiles:
+  - core
+  - infrastructure
+services:
+  - lab-proxy
+  - lab-health
+limits:
+  default_memory: "384m"
+  default_cpus: "0.75"

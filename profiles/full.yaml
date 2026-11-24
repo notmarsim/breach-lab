@@ -1,0 +1,18 @@
+name: full
+description: "Full Nexora Technologies enterprise environment (6-10 GB RAM)."
+estimated_ram_mb: 8192
+min_host_ram_mb: 12288
+recommended_cpus: 4
+compose_profiles:
+  - core
+  - web
+  - api
+  - infrastructure
+  - privesc
+  - full
+services:
+  - lab-proxy
+  - lab-health
+limits:
+  default_memory: "512m"
+  default_cpus: "1.0"

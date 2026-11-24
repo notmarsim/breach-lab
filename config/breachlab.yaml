@@ -1,0 +1,16 @@
+version: "0.1.0"
+organization:
+  name: "Nexora Technologies"
+  domain: "nexora.test"
+defaults:
+  profile: "balanced"
+  mode: "learning"
+  strict_isolation: true
+  log_retention_days: 7
+  max_log_size: "50m"
+paths:
+  state_dir: ".breachlab"
+  scenarios_dir: "scenarios"
+  snapshots_dir: "snapshots"
+  logs_dir: "logs"
+  profiles_dir: "profiles"

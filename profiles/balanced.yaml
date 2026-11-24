@@ -1,0 +1,17 @@
+name: balanced
+description: "Balanced enterprise training profile optimized for 16 GB host RAM (4-6 GB lab)."
+estimated_ram_mb: 5120
+min_host_ram_mb: 8192
+recommended_cpus: 4
+compose_profiles:
+  - core
+  - web
+  - api
+  - infrastructure
+  - privesc
+services:
+  - lab-proxy
+  - lab-health
+limits:
+  default_memory: "512m"
+  default_cpus: "1.0"

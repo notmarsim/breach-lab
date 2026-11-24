@@ -1,0 +1,40 @@
+#!/usr/sbin/nft -f
+# BreachLab Fail-Closed Host Isolation Ruleset
+# Blocks target Docker bridges from initiating outbound connections to the
+# internet or external LANs while preserving established return traffic.
+
+table inet breachlab
+delete table inet breachlab
+
+table inet breachlab {
+    set target_bridges {
+        type ifname
+        elements = { "br-bl-dmz", "br-bl-int", "br-bl-db", "br-bl-res", "br-bl-mgmt" }
+    }
+
+    set lab_subnets {
+        type ipv4_addr
+        flags interval
+        elements = {
+            10.10.10.0/24,
+            10.10.20.0/24,
+            10.10.30.0/24,
+            10.10.40.0/24,
+            10.10.50.0/24,
+            10.10.60.0/24
+        }
+    }
+
+    chain forward {
+        type filter hook forward priority -10; policy accept;
+
+        # Allow established/related return traffic
+        ct state established,related accept
+
+        # Allow inter-lab traffic only if explicitly routed between lab bridges
+        iifname @target_bridges ip daddr @lab_subnets accept
+
+        # Fail-closed: drop any outbound traffic from target bridges to non-lab destinations
+        iifname @target_bridges drop
+    }
+}
