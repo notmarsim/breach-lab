@@ -40,3 +40,13 @@ def test_resource_recommendation_for_low_ram_host() -> None:
         free_disk_gb=25.0,
     )
     assert rm.recommend_profile(host_3gb) == "minimal"
+
+
+def test_own_breachlab_bridge_routes_are_not_flagged_as_conflicts(monkeypatch: pytest.MonkeyPatch) -> None:
+    import ipaddress
+
+    nm = NetworkManager(get_project_root())
+    monkeypatch.setattr(nm, "_host_interface_networks", lambda: [("br-bl-ext", ipaddress.IPv4Network("10.10.10.0/24"))])
+    monkeypatch.setattr(nm, "_linux_route_networks", lambda: [("br-bl-dmz", ipaddress.IPv4Network("10.10.20.0/24"))])
+    conflicts = nm.validate_topology(check_host_routes=True)
+    assert conflicts == []

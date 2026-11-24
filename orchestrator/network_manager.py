@@ -70,9 +70,14 @@ class NetworkManager:
             parts = line.split()
             if not parts or parts[0] == "default":
                 continue
+            dev_name = f"route:{parts[0]}"
+            if "dev" in parts:
+                dev_idx = parts.index("dev")
+                if dev_idx + 1 < len(parts):
+                    dev_name = parts[dev_idx + 1]
             try:
                 net = ipaddress.IPv4Network(parts[0], strict=False)
-                routes.append((f"route:{parts[0]}", net))
+                routes.append((dev_name, net))
             except ValueError:
                 continue
         return routes
