@@ -13,7 +13,9 @@ COPY config /app/config
 COPY profiles /app/profiles
 COPY control_center/backend/app.py /app/app.py
 
-RUN useradd -m nexora_cc && chown -R nexora_cc:nexora_cc /app
+RUN useradd -m nexora_cc \
+    && mkdir -p /app/.breachlab /app/scenarios /app/snapshots \
+    && chown -R nexora_cc:nexora_cc /app
 USER nexora_cc
 
 EXPOSE 8443
